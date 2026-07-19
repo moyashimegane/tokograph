@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-labelledby="title description">
+  <title id="title">Tokograph icon candidate 1</title>
+  <desc id="description">A dense teal heatmap on a deep blue-green app tile.</desc>
+  <defs>
+    <linearGradient id="background" x1="176" y1="96" x2="824" y2="936" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#183A42"/>
+      <stop offset="0.55" stop-color="#0A252D"/>
+      <stop offset="1" stop-color="#061A21"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="512" y1="168" x2="512" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#102F37"/>
+      <stop offset="1" stop-color="#09232A"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="512" y1="64" x2="512" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="28" stdDeviation="32" flood-color="#001116" flood-opacity="0.34"/>
+    </filter>
+    <filter id="cell-glow" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="210" fill="#062028" opacity="0.28" filter="url(#shadow)"/>
+  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#background)"/>
+  <rect x="69" y="69" width="886" height="886" rx="205" fill="none" stroke="#A6FFF2" stroke-opacity="0.12" stroke-width="10"/>
+  <rect x="178" y="152" width="668" height="720" rx="72" fill="url(#panel)" stroke="#82E8DA" stroke-opacity="0.11" stroke-width="4"/>
+  <g fill="#2B474D">
+    <rect x="234" y="204" width="56" height="56" rx="13"/><rect x="306" y="204" width="56" height="56" rx="13"/><rect x="378" y="204" width="56" height="56" rx="13"/><rect x="450" y="204" width="56" height="56" rx="13"/><rect x="522" y="204" width="56" height="56" rx="13"/><rect x="594" y="204" width="56" height="56" rx="13"/><rect x="666" y="204" width="56" height="56" rx="13"/><rect x="738" y="204" width="56" height="56" rx="13"/>
+    <rect x="234" y="276" width="56" height="56" rx="13"/><rect x="306" y="276" width="56" height="56" rx="13"/><rect x="378" y="276" width="56" height="56" rx="13"/><rect x="450" y="276" width="56" height="56" rx="13"/><rect x="522" y="276" width="56" height="56" rx="13"/><rect x="594" y="276" width="56" height="56" rx="13"/><rect x="666" y="276" width="56" height="56" rx="13"/><rect x="738" y="276" width="56" height="56" rx="13"/>
+    <rect x="234" y="348" width="56" height="56" rx="13"/><rect x="306" y="348" width="56" height="56" rx="13"/><rect x="378" y="348" width="56" height="56" rx="13"/><rect x="450" y="348" width="56" height="56" rx="13"/><rect x="522" y="348" width="56" height="56" rx="13"/><rect x="594" y="348" width="56" height="56" rx="13"/><rect x="666" y="348" width="56" height="56" rx="13"/><rect x="738" y="348" width="56" height="56" rx="13"/>
+    <rect x="234" y="420" width="56" height="56" rx="13"/><rect x="306" y="420" width="56" height="56" rx="13"/><rect x="378" y="420" width="56" height="56" rx="13"/><rect x="450" y="420" width="56" height="56" rx="13"/><rect x="522" y="420" width="56" height="56" rx="13"/><rect x="594" y="420" width="56" height="56" rx="13"/><rect x="666" y="420" width="56" height="56" rx="13"/><rect x="738" y="420" width="56" height="56" rx="13"/>
+    <rect x="234" y="492" width="56" height="56" rx="13"/><rect x="306" y="492" width="56" height="56" rx="13"/><rect x="378" y="492" width="56" height="56" rx="13"/><rect x="450" y="492" width="56" height="56" rx="13"/><rect x="522" y="492" width="56" height="56" rx="13"/><rect x="594" y="492" width="56" height="56" rx="13"/><rect x="666" y="492" width="56" height="56" rx="13"/><rect x="738" y="492" width="56" height="56" rx="13"/>
+    <rect x="234" y="564" width="56" height="56" rx="13"/><rect x="306" y="564" width="56" height="56" rx="13"/><rect x="378" y="564" width="56" height="56" rx="13"/><rect x="450" y="564" width="56" height="56" rx="13"/><rect x="522" y="564" width="56" height="56" rx="13"/><rect x="594" y="564" width="56" height="56" rx="13"/><rect x="666" y="564" width="56" height="56" rx="13"/><rect x="738" y="564" width="56" height="56" rx="13"/>
+    <rect x="234" y="636" width="56" height="56" rx="13"/><rect x="306" y="636" width="56" height="56" rx="13"/><rect x="378" y="636" width="56" height="56" rx="13"/><rect x="450" y="636" width="56" height="56" rx="13"/><rect x="522" y="636" width="56" height="56" rx="13"/><rect x="594" y="636" width="56" height="56" rx="13"/><rect x="666" y="636" width="56" height="56" rx="13"/><rect x="738" y="636" width="56" height="56" rx="13"/>
+    <rect x="234" y="708" width="56" height="56" rx="13"/><rect x="306" y="708" width="56" height="56" rx="13"/><rect x="378" y="708" width="56" height="56" rx="13"/><rect x="450" y="708" width="56" height="56" rx="13"/><rect x="522" y="708" width="56" height="56" rx="13"/><rect x="594" y="708" width="56" height="56" rx="13"/><rect x="666" y="708" width="56" height="56" rx="13"/><rect x="738" y="708" width="56" height="56" rx="13"/>
+    <rect x="234" y="780" width="56" height="56" rx="13"/><rect x="306" y="780" width="56" height="56" rx="13"/><rect x="378" y="780" width="56" height="56" rx="13"/><rect x="450" y="780" width="56" height="56" rx="13"/><rect x="522" y="780" width="56" height="56" rx="13"/><rect x="594" y="780" width="56" height="56" rx="13"/><rect x="666" y="780" width="56" height="56" rx="13"/><rect x="738" y="780" width="56" height="56" rx="13"/>
+  </g>
+  <g fill="#25B7AA">
+    <rect x="378" y="276" width="56" height="56" rx="13"/><rect x="666" y="276" width="56" height="56" rx="13"/>
+    <rect x="306" y="348" width="56" height="56" rx="13"/><rect x="522" y="348" width="56" height="56" rx="13"/><rect x="738" y="348" width="56" height="56" rx="13"/>
+    <rect x="234" y="420" width="56" height="56" rx="13"/><rect x="450" y="420" width="56" height="56" rx="13"/><rect x="594" y="420" width="56" height="56" rx="13"/>
+    <rect x="306" y="492" width="56" height="56" rx="13"/><rect x="738" y="492" width="56" height="56" rx="13"/>
+    <rect x="378" y="564" width="56" height="56" rx="13"/><rect x="666" y="564" width="56" height="56" rx="13"/>
+    <rect x="234" y="636" width="56" height="56" rx="13"/><rect x="522" y="636" width="56" height="56" rx="13"/>
+    <rect x="450" y="708" width="56" height="56" rx="13"/><rect x="738" y="708" width="56" height="56" rx="13"/>
+  </g>
+  <g fill="#58DCCE">
+    <rect x="450" y="348" width="56" height="56" rx="13"/><rect x="594" y="348" width="56" height="56" rx="13"/>
+    <rect x="378" y="420" width="56" height="56" rx="13"/><rect x="666" y="420" width="56" height="56" rx="13"/>
+    <rect x="450" y="492" width="56" height="56" rx="13"/><rect x="594" y="492" width="56" height="56" rx="13"/>
+    <rect x="306" y="564" width="56" height="56" rx="13"/><rect x="522" y="564" width="56" height="56" rx="13"/>
+    <rect x="378" y="636" width="56" height="56" rx="13"/><rect x="666" y="636" width="56" height="56" rx="13"/>
+  </g>
+  <g fill="#A2FFF1" filter="url(#cell-glow)">
+    <rect x="522" y="420" width="56" height="56" rx="13"/>
+    <rect x="378" y="492" width="56" height="56" rx="13"/>
+    <rect x="594" y="564" width="56" height="56" rx="13"/>
+  </g>
+  <path d="M274 70h476c104 0 188 84 188 188v60C764 202 305 198 86 370V252C86 151 170 70 274 70Z" fill="url(#shine)"/>
+</svg>

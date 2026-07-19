@@ -1,5 +1,20 @@
 # Tokograph
 
+<p align="center">
+  <img src="design/icon/icon.svg" width="128" alt="Tokograph app icon">
+</p>
+
+<p align="center">
+  <a href="https://github.com/moyashimegane/tokograph/releases/latest"><img src="https://img.shields.io/badge/DOWNLOAD-LATEST-0F766E?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="Download latest release"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/moyashimegane/tokograph/actions/workflows/ci.yml"><img src="https://github.com/moyashimegane/tokograph/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/moyashimegane/tokograph/blob/main/scripts/build-app.sh"><img src="https://img.shields.io/badge/macOS-13%2B-000000?style=flat&amp;logo=apple&amp;logoColor=white" alt="macOS 13 or later"></a>
+  <a href="https://github.com/moyashimegane/tokograph/blob/main/Package.swift"><img src="https://img.shields.io/badge/Swift-5.9-F05138?style=flat&amp;logo=swift&amp;logoColor=white" alt="Swift 5.9"></a>
+  <a href="https://github.com/moyashimegane/tokograph/blob/main/LICENSE"><img src="https://img.shields.io/github/license/moyashimegane/tokograph?style=flat" alt="MIT License"></a>
+</p>
+
 **Unofficial — not affiliated with Anthropic.**
 
 A macOS menu-bar app that shows which day, at which hour, you spent how many
