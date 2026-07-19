@@ -8,9 +8,10 @@ final class AggregatorTests: XCTestCase {
         c.timeZone = TimeZone(identifier: "America/New_York")!
         return c
     }
-    private func rec(_ iso: String, total: Int64 = 10, id: String = UUID().uuidString) -> UsageRecord {
+    private func rec(_ iso: String, total: Int64 = 10, model: String? = "m",
+                     id: String = UUID().uuidString) -> UsageRecord {
         UsageRecord(timestamp: LineParser.parseISO8601(iso)!, tokens: TokenCounts(input: total),
-                    model: "m", project: "p", sessionId: nil, messageId: id, requestId: nil)
+                    model: model, project: "p", sessionId: nil, messageId: id, requestId: nil)
     }
     private let now = LineParser.parseISO8601("2026-07-18T12:00:00Z")!
 
@@ -56,6 +57,25 @@ final class AggregatorTests: XCTestCase {
         XCTAssertEqual(r.totals.last7Days, expected)
         XCTAssertEqual(r.totals.visibleWindow, expected)
         XCTAssertTrue(r.totals.visibleWindow.isAboveInt64Max)
+    }
+    func testPerModelTotalsAreGroupedWithinCellAndNilIsUnknown() {
+        let timestamp = "2026-07-18T10:30:00Z"
+        let records = [
+            rec(timestamp, total: 2, model: "opus"),
+            rec(timestamp, total: 3, model: "opus"),
+            rec(timestamp, total: 5, model: "sonnet"),
+            rec(timestamp, total: 7, model: nil),
+        ]
+        let r = Aggregator.aggregate(records: records, now: now, calendar: cal)
+        let key = DayHour(day: cal.startOfDay(for: records[0].timestamp),
+                          hour: cal.component(.hour, from: records[0].timestamp))
+
+        XCTAssertEqual(r.cells[key], WideUInt(17))
+        XCTAssertEqual(r.perModel[key], [
+            "opus": WideUInt(5),
+            "sonnet": WideUInt(5),
+            "unknown": WideUInt(7),
+        ])
     }
     func testFutureTimestampCountedAndDropped() {
         let r = Aggregator.aggregate(records: [rec("2026-07-18T12:00:01Z")], now: now, calendar: cal)
