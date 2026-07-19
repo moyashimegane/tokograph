@@ -33,3 +33,5 @@ jobs:
         with:
           files: dist/Tokograph.zip
           body_path: dist/Tokograph.zip.sha256
+          # PR titles since the previous tag become the notes; the SHA256 body is prepended.
+          generate_release_notes: true
