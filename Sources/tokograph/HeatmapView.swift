@@ -86,7 +86,18 @@ struct HeatmapGrid: View {
                 }
             }
             hoverDetail
+            totalsFooter
         }
+    }
+
+    private var totalsFooter: some View {
+        Text("Today \(TokenCountFormatter.abbreviated(snapshot.totals.today)) · "
+            + "7d \(TokenCountFormatter.abbreviated(snapshot.totals.last7Days)) · "
+            + "14d \(TokenCountFormatter.abbreviated(snapshot.totals.visibleWindow))")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .monospacedDigit()
+            .lineLimit(1)
     }
 
     private var dayHeaders: some View {
@@ -204,6 +215,9 @@ struct HeatmapGrid: View {
         s.state = .ok
         s.cells = [DayHour(day: today, hour: 9): WideUInt(23_000_000),
                    DayHour(day: today, hour: 11): WideUInt(79_000_000)]
+        s.totals.today = WideUInt(102_000_000)
+        s.totals.last7Days = WideUInt(408_000_000)
+        s.totals.visibleWindow = WideUInt(702_000_000)
         s.thresholds3 = [WideUInt(23_000_000), WideUInt(40_000_000), WideUInt(60_000_000)]
         s.diagnostics = ParseDiagnostics()
         s.windowDays = (0..<14).compactMap {

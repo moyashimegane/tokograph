@@ -90,15 +90,19 @@ final class RefreshEngineTests: XCTestCase {
         XCTAssertTrue(snap.capExceeded)
     }
     func testRunRefreshProducesSnapshot() {
-        let record = UsageRecord(timestamp: Date(timeIntervalSinceNow: -3600),
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let record = UsageRecord(timestamp: now,
                                  tokens: TokenCounts(input: 42), model: "m", project: "p",
                                  sessionId: nil, messageId: "m1", requestId: nil)
         let snap = RefreshEngine.runRefresh(
             defaultsValue: nil, env: [:], home: FileManager.default.temporaryDirectory,
             source: StubSource(result: src(usage: 1, records: [record])),
-            now: Date(), calendar: .current)
+            now: now, calendar: .current)
         XCTAssertEqual(snap.state, .ok)
         XCTAssertEqual(snap.windowDays.count, 14)
         XCTAssertEqual(snap.cells.values.first, WideUInt(42))
+        XCTAssertEqual(snap.totals.today, WideUInt(42))
+        XCTAssertEqual(snap.totals.last7Days, WideUInt(42))
+        XCTAssertEqual(snap.totals.visibleWindow, WideUInt(42))
     }
 }

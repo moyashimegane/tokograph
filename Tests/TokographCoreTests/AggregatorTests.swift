@@ -29,6 +29,33 @@ final class AggregatorTests: XCTestCase {
         XCTAssertEqual(r.inWindowRecordCount, 1)
         XCTAssertEqual(r.totalRecordCount, 2)
         XCTAssertEqual(r.futureTimestamps, 0)
+        XCTAssertEqual(r.totals.visibleWindow, WideUInt(10))
+    }
+    func testTotalsUseNowAnchoredTodayAndSevenDayBoundaries() {
+        // now local = Jul 18 08:00 EDT; 7d begins at Jul 12 00:00 EDT (04:00Z).
+        let records = [
+            rec("2026-07-18T04:00:00Z", total: 1),
+            rec("2026-07-18T03:59:59Z", total: 2),
+            rec("2026-07-12T04:00:00Z", total: 4),
+            rec("2026-07-12T03:59:59Z", total: 8),
+            rec("2026-07-18T12:00:01Z", total: 16),
+        ]
+        let r = Aggregator.aggregate(records: records, now: now, calendar: cal)
+        XCTAssertEqual(r.totals.today, WideUInt(1))
+        XCTAssertEqual(r.totals.last7Days, WideUInt(7))
+        XCTAssertEqual(r.totals.visibleWindow, WideUInt(15))
+    }
+    func testTotalsRemainWideAcrossCells() {
+        let records = [
+            rec("2026-07-18T10:00:00Z", total: Int64.max),
+            rec("2026-07-18T11:00:00Z", total: Int64.max),
+        ]
+        let r = Aggregator.aggregate(records: records, now: now, calendar: cal)
+        let expected = WideUInt(UInt64(Int64.max)) + WideUInt(UInt64(Int64.max))
+        XCTAssertEqual(r.totals.today, expected)
+        XCTAssertEqual(r.totals.last7Days, expected)
+        XCTAssertEqual(r.totals.visibleWindow, expected)
+        XCTAssertTrue(r.totals.visibleWindow.isAboveInt64Max)
     }
     func testFutureTimestampCountedAndDropped() {
         let r = Aggregator.aggregate(records: [rec("2026-07-18T12:00:01Z")], now: now, calendar: cal)

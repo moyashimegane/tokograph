@@ -4,6 +4,7 @@ public struct DisplaySnapshot: Sendable, Equatable {
     public var state: DataState
     public var cells: [DayHour: WideUInt]
     public var thresholds3: [WideUInt]?
+    public var totals = UsageTotals()
     public var diagnostics: ParseDiagnostics
     public var windowDays: [Date]
     public var rootPath: String
@@ -58,6 +59,7 @@ public enum RefreshEngine {
             state: deriveState(resolution: resolution, source: sourceResult, aggregation: aggregation),
             cells: aggregation.cells,
             thresholds3: t.map { [$0.q1, $0.q2, $0.q3] },
+            totals: aggregation.totals,
             diagnostics: diagnostics, windowDays: windowDays,
             rootPath: root.path, now: now, capExceeded: sourceResult.capExceeded)
     }
