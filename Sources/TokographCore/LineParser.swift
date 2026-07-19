@@ -4,7 +4,7 @@ public enum LineParser {
     static let knownTokenKeys = ["input_tokens", "output_tokens",
                                  "cache_creation_input_tokens", "cache_read_input_tokens"]
 
-    /// Classify one jsonl line per spec §Line classification.
+    /// Classify one jsonl line into exactly one LineClass.
     /// `unknownTokenField` is set when a recognized usage object carries an unknown `*_tokens` key.
     public static func classify(_ line: Data, project: String,
                                 unknownTokenField: inout Bool) -> LineClass {

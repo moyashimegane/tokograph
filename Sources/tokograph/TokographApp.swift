@@ -67,7 +67,7 @@ struct TokographApp: App {
         MeasureMode.runIfRequested()
         let s = UsageStore()
         _store = StateObject(wrappedValue: s)
-        // Refresh trigger fallback (spec §Refresh trigger): key-window notification.
+        // Refresh trigger fallback: key-window notification.
         windowObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { _ in
             Task { @MainActor in s.refresh() } // coalescing absorbs double-fires with onAppear

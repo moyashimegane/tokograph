@@ -15,6 +15,3 @@ dist/
 .idea/
 *.iml
 
-# 実装プラン(ローカル作業用・コミットしない)
-docs/superpowers/plans/
-.superpowers/

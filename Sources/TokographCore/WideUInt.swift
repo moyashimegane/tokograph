@@ -1,4 +1,4 @@
-/// 128-bit unsigned integer for overflow-safe token sums (spec: Arithmetic safety).
+/// 128-bit unsigned integer for overflow-safe token sums; saturates only at presentation.
 public struct WideUInt: Equatable, Comparable, Hashable, Sendable {
     public var high: UInt64
     public var low: UInt64

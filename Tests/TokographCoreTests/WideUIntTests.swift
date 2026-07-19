@@ -15,7 +15,7 @@ final class WideUIntTests: XCTestCase {
     func testDistinctTotalsNeverCompareEqualViaClamping() {
         let x = WideUInt(UInt64(Int64.max)) + WideUInt(10)
         let y = WideUInt(UInt64(Int64.max)) + WideUInt(20)
-        XCTAssertNotEqual(x, y)                    // spec: comparisons use wide repr
+        XCTAssertNotEqual(x, y)                    // comparisons use the wide representation, not clamped values
         XCTAssertTrue(y > x)
     }
     func testCarryAcrossLowWord() {

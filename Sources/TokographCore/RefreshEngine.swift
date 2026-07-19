@@ -17,7 +17,7 @@ public struct DisplaySnapshot: Sendable, Equatable {
 public enum RefreshEngine {
     public static func deriveState(resolution: ConfigRootResolution, source: SourceResult,
                                    aggregation: AggregationResult) -> DataState {
-        // Spec §States & Diagnostics: first match wins.
+        // State priority: first match wins.
         if case .configError = resolution { return .configError }
         if source.enumerationFailed || source.capExceeded
             || (source.enumeratedFileCount > 0 && source.parsedFileCount == 0) { return .error }

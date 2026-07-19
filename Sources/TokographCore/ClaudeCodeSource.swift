@@ -16,7 +16,7 @@ public protocol UsageSource: Sendable {
 }
 
 /// Thread-safe running total, used to bound raw (pre-dedup) record accumulation across parse
-/// workers (spec: "full record lists are never accumulated"). The 2,000,000-key Deduplicator cap
+/// workers — full record lists must never be accumulated. The 2,000,000-key Deduplicator cap
 /// alone cannot prevent OOM here because per-file record arrays accumulate in `fileResults` for
 /// every in-flight/completed worker *before* the sequential dedup merge runs; this counter lets
 /// the submission loop stop dispatching new files once the raw total crosses the cap, bounding
@@ -90,8 +90,8 @@ public struct ClaudeCodeSource: UsageSource {
 
         // Per-file parse: each file is independent (own FileHandle, own `unknownField` accumulator,
         // own local record/diagnostics buffer), so files are parsed concurrently across cores. Dedup
-        // is NOT thread-safe and its tie-break semantics depend on scan order (spec §Deterministic
-        // scan order), so results are merged into a single Deduplicator *sequentially*, in the same
+        // is NOT thread-safe and its tie-break semantics depend on a deterministic scan order,
+        // so results are merged into a single Deduplicator *sequentially*, in the same
         // sorted-path order the old serial loop used — this reproduces byte-identical output to the
         // serial implementation (same insert() call sequence => same dedup/cap/tie-break outcome),
         // just computed faster. Bail out before spending threads on it if already cancelled.

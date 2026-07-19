@@ -19,7 +19,7 @@ final class RefreshEngineTests: XCTestCase {
     }
     private let okRoot = ConfigRootResolution.resolved(URL(fileURLWithPath: "/tmp/x"))
 
-    // Priority order per spec state table
+    // State priority order (first match wins)
     func testConfigErrorWinsOverEverything() {
         XCTAssertEqual(RefreshEngine.deriveState(resolution: .configError,
             source: src(enumFail: true), aggregation: agg(inWindow: 0, total: 0)), .configError)

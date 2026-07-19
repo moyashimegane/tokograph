@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0   # full history: shallow (default depth-1) can put the tagged commit
                             # outside the fetched range, causing --is-ancestor false negatives
-      - name: "Verify tag commit is on default branch (spec: tags are not trusted alone)"
+      - name: "Verify tag commit is on default branch (tags alone are not trusted)"
         run: |
           # fresh hosted runner: origin/main never pre-exists, ff-only refspec is safe
           git fetch origin main:refs/remotes/origin/main
