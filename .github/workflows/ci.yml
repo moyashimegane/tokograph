@@ -1,0 +1,20 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-test:
+    runs-on: macos-26   # keep identical to release.yml: toolchain drift between
+                        # local/CI/release is what broke the first release run
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5   # v4
+      - name: Build app bundle (same script as release)
+        run: ./scripts/build-app.sh
+      - name: Test
+        run: swift test

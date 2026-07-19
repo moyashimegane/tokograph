@@ -1,0 +1,35 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-26           # keep identical to ci.yml
+    environment: release        # protected Environment with required manual approval
+    permissions:
+      contents: write           # upload release assets
+      id-token: write           # attestation
+      attestations: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5   # v4
+        with:
+          fetch-depth: 0   # full history: shallow (default depth-1) can put the tagged commit
+                            # outside the fetched range, causing --is-ancestor false negatives
+      - name: "Verify tag commit is on default branch (spec: tags are not trusted alone)"
+        run: |
+          # fresh hosted runner: origin/main never pre-exists, ff-only refspec is safe
+          git fetch origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Build
+        run: ./scripts/build-app.sh "${GITHUB_REF_NAME#v}"
+      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be   # v2
+        # Attestation for private repos requires Enterprise Cloud; runs once public.
+        if: ${{ !github.event.repository.private }}
+        with:
+          subject-path: dist/Tokograph.zip
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65      # v2
+        with:
+          files: dist/Tokograph.zip
+          body_path: dist/Tokograph.zip.sha256
