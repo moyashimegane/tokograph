@@ -104,20 +104,35 @@ struct HeatmapGrid: View {
         HStack(spacing: 2) {
             ForEach(snapshot.windowDays, id: \.self) { day in
                 let isToday = calendar.isDate(day, inSameDayAs: snapshot.now)
+                let weekday = calendar.component(.weekday, from: day)
                 VStack(spacing: 0) {
                     // Month line always renders (empty placeholder when not shown) so every
-                    // column — and the hour-label spacer below — has the same fixed two-line
+                    // column — and the hour-label spacer below — has the same fixed three-line
                     // height; otherwise the grid shifts ~1 row against the hour labels whenever
                     // the first column (which always shows its month) sets the tallest header.
                     Text(showsMonth(day) ? day.formatted(.dateTime.month(.abbreviated)) : " ")
                         .font(.system(size: 8))
+                    Text(weekdaySymbol(weekday))
+                        .font(.system(size: 9, weight: isToday ? .bold : .regular))
+                        .foregroundStyle(dayHeaderColor(weekday: weekday, isToday: isToday))
                     Text("\(calendar.component(.day, from: day))")
                         .font(.system(size: 9, weight: isToday ? .bold : .regular))
-                        .foregroundStyle(isToday ? Color.accentColor : .secondary)
+                        .foregroundStyle(dayHeaderColor(weekday: weekday, isToday: isToday))
                 }
                 .frame(width: cellW)
             }
         }
+    }
+
+    private func weekdaySymbol(_ weekday: Int) -> String {
+        calendar.veryShortStandaloneWeekdaySymbols[weekday - 1]
+    }
+
+    private func dayHeaderColor(weekday: Int, isToday: Bool) -> Color {
+        if isToday { return .accentColor }
+        if weekday == 1 { return .red }
+        if weekday == 7 { return .blue }
+        return .secondary
     }
 
     private func showsMonth(_ day: Date) -> Bool {
@@ -126,9 +141,10 @@ struct HeatmapGrid: View {
 
     private var hourLabels: some View {
         VStack(alignment: .trailing, spacing: 2) {
-            // Mirrors dayHeaders' two-line (month + day-number) header height exactly.
+            // Mirrors dayHeaders' three-line (month + weekday + day-number) header height exactly.
             VStack(spacing: 0) {
                 Text(" ").font(.system(size: 8))
+                Text(" ").font(.system(size: 9))
                 Text(" ").font(.system(size: 9))
             }
             ForEach(0..<24, id: \.self) { h in
