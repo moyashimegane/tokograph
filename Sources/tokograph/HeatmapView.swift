@@ -168,20 +168,41 @@ struct HeatmapGrid: View {
             .accessibilityLabel(tooltip(day: day, hour: hour, value: value))
     }
 
-    /// Fixed-height detail strip: instant hover feedback.
+    /// Fixed-height detail area: instant hover feedback without resizing the popover.
     /// (AppKit `.help` tooltips do not fire inside MenuBarExtra's non-activating panel.)
     var hoverDetail: some View {
-        Group {
+        VStack(alignment: .leading, spacing: 1) {
             if let key = hovered {
                 let value = snapshot.cells[key] ?? WideUInt(0)
                 Text(tooltip(day: key.day, hour: key.hour, value: value))
                     .font(.caption).monospacedDigit()
+                if let breakdown = modelBreakdown(for: key) {
+                    Text(breakdown)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .lineLimit(4)
+                        .truncationMode(.tail)
+                } else {
+                    Text("No model usage")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             } else {
                 Text("Hover a cell for details")
                     .font(.caption).foregroundStyle(.tertiary)
             }
         }
-        .frame(height: 14, alignment: .leading)
+        .frame(height: 68, alignment: .topLeading)
+    }
+
+    private func modelBreakdown(for key: DayHour) -> String? {
+        guard let models = snapshot.perModel[key], !models.isEmpty else { return nil }
+        return models.sorted {
+            $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key
+        }.map {
+            "\($0.key) \(TokenCountFormatter.abbreviated($0.value))"
+        }.joined(separator: "\n")
     }
 
     private func tooltip(day: Date, hour: Int, value: WideUInt) -> String {
@@ -215,6 +236,13 @@ struct HeatmapGrid: View {
         s.state = .ok
         s.cells = [DayHour(day: today, hour: 9): WideUInt(23_000_000),
                    DayHour(day: today, hour: 11): WideUInt(79_000_000)]
+        s.perModel = [
+            DayHour(day: today, hour: 9): [
+                "claude-sonnet-5": WideUInt(18_000_000),
+                "claude-haiku-4-5": WideUInt(5_000_000),
+            ],
+            DayHour(day: today, hour: 11): ["claude-opus-4-1": WideUInt(79_000_000)],
+        ]
         s.totals.today = WideUInt(102_000_000)
         s.totals.last7Days = WideUInt(408_000_000)
         s.totals.visibleWindow = WideUInt(702_000_000)

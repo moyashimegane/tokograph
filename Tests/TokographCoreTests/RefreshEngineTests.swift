@@ -101,6 +101,7 @@ final class RefreshEngineTests: XCTestCase {
         XCTAssertEqual(snap.state, .ok)
         XCTAssertEqual(snap.windowDays.count, 14)
         XCTAssertEqual(snap.cells.values.first, WideUInt(42))
+        XCTAssertEqual(snap.perModel.values.first, ["m": WideUInt(42)])
         XCTAssertEqual(snap.totals.today, WideUInt(42))
         XCTAssertEqual(snap.totals.last7Days, WideUInt(42))
         XCTAssertEqual(snap.totals.visibleWindow, WideUInt(42))

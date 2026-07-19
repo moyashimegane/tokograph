@@ -3,6 +3,7 @@ import Foundation
 public struct DisplaySnapshot: Sendable, Equatable {
     public var state: DataState
     public var cells: [DayHour: WideUInt]
+    public var perModel: [DayHour: [String: WideUInt]]
     public var thresholds3: [WideUInt]?
     public var totals = UsageTotals()
     public var diagnostics: ParseDiagnostics
@@ -10,7 +11,7 @@ public struct DisplaySnapshot: Sendable, Equatable {
     public var rootPath: String
     public var now: Date
     public var capExceeded: Bool = false
-    public static let initial = DisplaySnapshot(state: .empty, cells: [:], thresholds3: nil,
+    public static let initial = DisplaySnapshot(state: .empty, cells: [:], perModel: [:], thresholds3: nil,
                                                 diagnostics: ParseDiagnostics(), windowDays: [],
                                                 rootPath: "", now: .distantPast, capExceeded: false)
 }
@@ -34,7 +35,7 @@ public enum RefreshEngine {
                                   calendar: Calendar) -> DisplaySnapshot {
         let resolution = ConfigRoot.resolve(defaultsValue: defaultsValue, env: env, home: home)
         guard case .resolved(let root) = resolution else {
-            return DisplaySnapshot(state: .configError, cells: [:], thresholds3: nil,
+            return DisplaySnapshot(state: .configError, cells: [:], perModel: [:], thresholds3: nil,
                                    diagnostics: ParseDiagnostics(), windowDays: [],
                                    rootPath: "", now: now)
         }
@@ -42,7 +43,7 @@ public enum RefreshEngine {
         do { sourceResult = try source.collect(root: root) }
         catch {
             var d = ParseDiagnostics(); d.unreadableFiles = 1
-            return DisplaySnapshot(state: .error, cells: [:], thresholds3: nil, diagnostics: d,
+            return DisplaySnapshot(state: .error, cells: [:], perModel: [:], thresholds3: nil, diagnostics: d,
                                    windowDays: [], rootPath: root.path, now: now)
         }
         let aggregation = Aggregator.aggregate(records: sourceResult.records, now: now, calendar: calendar)
@@ -58,6 +59,7 @@ public enum RefreshEngine {
         return DisplaySnapshot(
             state: deriveState(resolution: resolution, source: sourceResult, aggregation: aggregation),
             cells: aggregation.cells,
+            perModel: aggregation.perModel,
             thresholds3: t.map { [$0.q1, $0.q2, $0.q3] },
             totals: aggregation.totals,
             diagnostics: diagnostics, windowDays: windowDays,
