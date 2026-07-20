@@ -53,13 +53,40 @@ Download `Tokograph.zip` from
 move `Tokograph.app` to `/Applications`. Release zips are built by GitHub
 Actions from the tagged commit.
 
-The app is unsigned, so macOS warns on first launch: allow it via System
-Settings → Privacy & Security → "Open Anyway" (macOS 15+), or right-click →
-Open (macOS 13–14). SHA-256 checksums in release notes detect corruption
-only — they do not prove origin. Releases carry GitHub artifact
-attestation — verify provenance with:
+The app is unsigned and not notarized, so macOS blocks its first launch.
+Only override this warning for a copy downloaded from this repository's
+[Releases](https://github.com/moyashimegane/tokograph/releases) page. Do not
+disable Gatekeeper globally.
+
+SHA-256 checksums in release notes detect corruption only — they do not prove
+origin. Releases carry GitHub artifact attestation — verify provenance with:
 
     gh attestation verify Tokograph.zip --repo moyashimegane/tokograph
+
+#### First launch
+
+These screenshots show macOS 26. Labels and layout may differ on earlier
+versions.
+
+1. Try to open `Tokograph.app` once. When macOS blocks it, close the warning.
+2. Open System Settings → Privacy & Security, scroll to Security, then click
+   **Open Anyway**.
+
+<p align="center">
+  <img src="docs/images/gatekeeper-privacy-security.png" width="720" alt="macOS Privacy &amp; Security settings with an arrow pointing to Open Anyway">
+</p>
+
+3. In the confirmation dialog, click **Open Anyway** again.
+
+<p align="center">
+  <img src="docs/images/gatekeeper-open-anyway.png" width="360" alt="macOS confirmation dialog with Open Anyway highlighted">
+</p>
+
+4. Authenticate with your Mac login password or Touch ID. macOS saves the
+   exception, so later launches open normally.
+
+If the controls look different on your macOS version, follow
+[Apple's official instructions](https://support.apple.com/guide/mac-help/mh40617/mac).
 
 ### Build from source
 
