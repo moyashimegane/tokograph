@@ -25,7 +25,7 @@ struct HeatmapPopover: View {
             footer
         }
         .padding(12)
-        .frame(width: 480)
+        .frame(width: 520)
     }
 
     private var footer: some View {
@@ -68,7 +68,11 @@ struct StateMessage: View {
 struct HeatmapGrid: View {
     let snapshot: DisplaySnapshot
     @State private var hovered: DayHour?
-    private let cellW: CGFloat = 26, cellH: CGFloat = 11
+    private let cellW: CGFloat = 30, cellH: CGFloat = 15
+    private let monthFontSize: CGFloat = 11
+    private let weekdayFontSize: CGFloat = 11
+    private let dayFontSize: CGFloat = 12
+    private let hourFontSize: CGFloat = 11
 
     private var calendar: Calendar { .current }
     private var thresholds: (q1: WideUInt, q2: WideUInt, q3: WideUInt)? {
@@ -111,13 +115,17 @@ struct HeatmapGrid: View {
                     // height; otherwise the grid shifts ~1 row against the hour labels whenever
                     // the first column (which always shows its month) sets the tallest header.
                     Text(showsMonth(day) ? day.formatted(.dateTime.month(.abbreviated)) : " ")
-                        .font(.system(size: 8))
+                        .font(.system(size: monthFontSize))
+                        .foregroundStyle(.secondary)
                     Text(weekdaySymbol(weekday))
-                        .font(.system(size: 9, weight: isToday ? .bold : .regular))
+                        .font(.system(size: weekdayFontSize,
+                                      weight: isToday ? .bold : .regular))
                         .foregroundStyle(dayHeaderColor(weekday: weekday, isToday: isToday))
                     Text("\(calendar.component(.day, from: day))")
-                        .font(.system(size: 9, weight: isToday ? .bold : .regular))
+                        .font(.system(size: dayFontSize,
+                                      weight: isToday ? .bold : .medium))
                         .foregroundStyle(dayHeaderColor(weekday: weekday, isToday: isToday))
+                        .monospacedDigit()
                 }
                 .frame(width: cellW)
             }
@@ -143,14 +151,16 @@ struct HeatmapGrid: View {
         VStack(alignment: .trailing, spacing: 2) {
             // Mirrors dayHeaders' three-line (month + weekday + day-number) header height exactly.
             VStack(spacing: 0) {
-                Text(" ").font(.system(size: 8))
-                Text(" ").font(.system(size: 9))
-                Text(" ").font(.system(size: 9))
+                Text(" ").font(.system(size: monthFontSize))
+                Text(" ").font(.system(size: weekdayFontSize))
+                Text(" ").font(.system(size: dayFontSize, weight: .medium))
             }
             ForEach(0..<24, id: \.self) { h in
                 Text(h % 3 == 0 ? "\(h)" : " ")
-                    .font(.system(size: 8)).foregroundStyle(.secondary)
-                    .frame(height: cellH)
+                    .font(.system(size: hourFontSize))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .frame(width: 20, height: cellH, alignment: .trailing)
             }
         }
     }
@@ -209,7 +219,7 @@ struct HeatmapGrid: View {
                     .font(.caption).foregroundStyle(.tertiary)
             }
         }
-        .frame(height: 68, alignment: .topLeading)
+        .frame(height: 72, alignment: .topLeading)
     }
 
     private func modelBreakdown(for key: DayHour) -> String? {
@@ -272,6 +282,6 @@ struct HeatmapGrid: View {
         return s
     }()
     return HeatmapPopover().environmentObject(UsageStore(snapshot: snap))
-        .frame(width: 480)
+        .frame(width: 520)
 }
 #endif
