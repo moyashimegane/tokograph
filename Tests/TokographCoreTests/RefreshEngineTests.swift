@@ -102,8 +102,57 @@ final class RefreshEngineTests: XCTestCase {
         XCTAssertEqual(snap.windowDays.count, 14)
         XCTAssertEqual(snap.cells.values.first, WideUInt(42))
         XCTAssertEqual(snap.perModel.values.first, ["m": WideUInt(42)])
-        XCTAssertEqual(snap.totals.today, WideUInt(42))
+        XCTAssertEqual(snap.totals.windowEndDay, WideUInt(42))
         XCTAssertEqual(snap.totals.last7Days, WideUInt(42))
         XCTAssertEqual(snap.totals.visibleWindow, WideUInt(42))
+    }
+    func testHistoricalWindowUsesRequestedEndDayAndActualNow() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        let now = LineParser.parseISO8601("2026-07-18T12:00:00Z")!
+        let end = LineParser.parseISO8601("2026-07-11T16:00:00Z")!
+        let included = UsageRecord(
+            timestamp: LineParser.parseISO8601("2026-07-12T03:59:59Z")!,
+            tokens: TokenCounts(input: 2), model: "m", project: "p",
+            sessionId: nil, messageId: "m1", requestId: nil)
+        let newerPast = UsageRecord(
+            timestamp: LineParser.parseISO8601("2026-07-12T04:00:00Z")!,
+            tokens: TokenCounts(input: 4), model: "m", project: "p",
+            sessionId: nil, messageId: "m2", requestId: nil)
+        let actualFuture = UsageRecord(
+            timestamp: LineParser.parseISO8601("2026-07-18T12:00:01Z")!,
+            tokens: TokenCounts(input: 8), model: "m", project: "p",
+            sessionId: nil, messageId: "m3", requestId: nil)
+
+        let snap = RefreshEngine.runRefresh(
+            defaultsValue: nil, env: [:], home: FileManager.default.temporaryDirectory,
+            source: StubSource(result: src(usage: 3,
+                                          records: [included, newerPast, actualFuture])),
+            now: now, windowEnd: end, calendar: calendar)
+
+        XCTAssertEqual(snap.state, .ok)
+        XCTAssertEqual(snap.windowDays.count, 14)
+        XCTAssertEqual(calendar.component(.day, from: snap.windowDays.first!), 28)
+        XCTAssertEqual(calendar.component(.month, from: snap.windowDays.first!), 6)
+        XCTAssertEqual(calendar.component(.day, from: snap.windowDays.last!), 11)
+        XCTAssertEqual(snap.cells.values.first, WideUInt(2))
+        XCTAssertEqual(snap.totals.windowEndDay, WideUInt(2))
+        XCTAssertEqual(snap.diagnostics.futureTimestamps, 1)
+    }
+    func testFutureRequestedWindowIsClampedToActualToday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        let now = LineParser.parseISO8601("2026-07-18T12:00:00Z")!
+        let futureEnd = LineParser.parseISO8601("2026-07-25T12:00:00Z")!
+        let record = UsageRecord(timestamp: now, tokens: TokenCounts(input: 1), model: "m",
+                                 project: "p", sessionId: nil, messageId: "m1", requestId: nil)
+
+        let snap = RefreshEngine.runRefresh(
+            defaultsValue: nil, env: [:], home: FileManager.default.temporaryDirectory,
+            source: StubSource(result: src(usage: 1, records: [record])),
+            now: now, windowEnd: futureEnd, calendar: calendar)
+
+        XCTAssertTrue(calendar.isDate(snap.windowDays.last!, inSameDayAs: now))
+        XCTAssertEqual(snap.totals.windowEndDay, WideUInt(1))
     }
 }

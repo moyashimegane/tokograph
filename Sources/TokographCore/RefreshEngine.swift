@@ -31,12 +31,18 @@ public enum RefreshEngine {
     }
 
     public static func runRefresh(defaultsValue: String?, env: [String: String], home: URL,
-                                  source: UsageSource, now: Date,
+                                  source: UsageSource, now: Date, windowEnd: Date? = nil,
                                   calendar: Calendar) -> DisplaySnapshot {
+        let todayStart = calendar.startOfDay(for: now)
+        let requestedEnd = calendar.startOfDay(for: windowEnd ?? now)
+        let windowEndStart = min(requestedEnd, todayStart)
+        let windowDays: [Date] = (0..<14).compactMap {
+            calendar.date(byAdding: .day, value: -(13 - $0), to: windowEndStart)
+        }
         let resolution = ConfigRoot.resolve(defaultsValue: defaultsValue, env: env, home: home)
         guard case .resolved(let root) = resolution else {
             return DisplaySnapshot(state: .configError, cells: [:], perModel: [:], thresholds3: nil,
-                                   diagnostics: ParseDiagnostics(), windowDays: [],
+                                   diagnostics: ParseDiagnostics(), windowDays: windowDays,
                                    rootPath: "", now: now)
         }
         let sourceResult: SourceResult
@@ -44,17 +50,14 @@ public enum RefreshEngine {
         catch {
             var d = ParseDiagnostics(); d.unreadableFiles = 1
             return DisplaySnapshot(state: .error, cells: [:], perModel: [:], thresholds3: nil, diagnostics: d,
-                                   windowDays: [], rootPath: root.path, now: now)
+                                   windowDays: windowDays, rootPath: root.path, now: now)
         }
-        let aggregation = Aggregator.aggregate(records: sourceResult.records, now: now, calendar: calendar)
+        let aggregation = Aggregator.aggregate(records: sourceResult.records, now: now,
+                                               windowEnd: windowEndStart, calendar: calendar)
         var diagnostics = sourceResult.diagnostics
         diagnostics.futureTimestamps = aggregation.futureTimestamps
         diagnostics.saturationEvents = aggregation.cells.values.filter { $0.isAboveInt64Max }.count
 
-        let todayStart = calendar.startOfDay(for: now)
-        let windowDays: [Date] = (0..<14).compactMap {
-            calendar.date(byAdding: .day, value: -(13 - $0), to: todayStart)
-        }
         let t = Aggregator.thresholds(nonZero: aggregation.cells.values.filter { $0 > WideUInt(0) })
         return DisplaySnapshot(
             state: deriveState(resolution: resolution, source: sourceResult, aggregation: aggregation),

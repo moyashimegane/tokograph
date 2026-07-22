@@ -6,6 +6,9 @@ struct HeatmapPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if showsFallbackPeriodNavigation {
+                fallbackPeriodNavigation
+            }
             switch store.snapshot.state {
             case .ok:
                 HeatmapGrid(snapshot: store.snapshot)
@@ -20,12 +23,58 @@ struct HeatmapPopover: View {
             case .empty:
                 StateMessage(text: "No usage data found. Tokograph reads Claude Code's local logs.")
             case .noRecentData:
-                StateMessage(text: "No usage in the last 14 days.")
+                HeatmapGrid(snapshot: store.snapshot)
             }
             footer
         }
         .padding(12)
         .frame(width: 520)
+    }
+
+    private var showsFallbackPeriodNavigation: Bool {
+        guard !store.isCurrentWindow, store.snapshot.windowDays.count == 14 else { return false }
+        return store.snapshot.state != .ok && store.snapshot.state != .noRecentData
+    }
+
+    private var fallbackPeriodNavigation: some View {
+        HStack(spacing: 6) {
+            Button(action: store.showPreviousWeek) {
+                Image(systemName: "chevron.left")
+                    .frame(width: 18, height: 18)
+            }
+            .buttonStyle(.borderless)
+            .disabled(store.isLoading)
+            .help("Show previous week")
+            .accessibilityLabel("Show previous week")
+
+            Button(action: store.showNextWeek) {
+                Image(systemName: "chevron.right")
+                    .frame(width: 18, height: 18)
+            }
+            .buttonStyle(.borderless)
+            .disabled(store.isLoading || store.isCurrentWindow)
+            .help("Show next week")
+            .accessibilityLabel("Show next week")
+
+            Text(periodLabel)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+            Spacer()
+            if !store.isCurrentWindow {
+                Button("Today", action: store.showToday)
+                    .font(.caption)
+                    .disabled(store.isLoading)
+            }
+        }
+    }
+
+    private var periodLabel: String {
+        guard let start = store.snapshot.windowDays.first,
+              let end = store.snapshot.windowDays.last else { return "selected period" }
+        let startText = start.formatted(.dateTime.month(.abbreviated).day())
+        let endText = end.formatted(.dateTime.year().month(.abbreviated).day())
+        return "\(startText) – \(endText)"
     }
 
     private var footer: some View {
@@ -66,8 +115,12 @@ struct StateMessage: View {
 }
 
 struct HeatmapGrid: View {
+    private enum PeriodDirection: Hashable { case previous, next }
+
+    @EnvironmentObject var store: UsageStore
     let snapshot: DisplaySnapshot
     @State private var hovered: DayHour?
+    @State private var hoveredPeriodButton: PeriodDirection?
     private let cellW: CGFloat = 30, cellH: CGFloat = 15
     private let monthFontSize: CGFloat = 11
     private let weekdayFontSize: CGFloat = 11
@@ -82,10 +135,10 @@ struct HeatmapGrid: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top, spacing: 4) {
-                hourLabels
-                VStack(spacing: 2) {
-                    dayHeaders
+            VStack(alignment: .leading, spacing: 2) {
+                dayNavigationHeader
+                HStack(alignment: .top, spacing: 4) {
+                    hourLabels
                     grid
                 }
             }
@@ -94,14 +147,69 @@ struct HeatmapGrid: View {
         }
     }
 
+    private var dayNavigationHeader: some View {
+        HStack(spacing: 4) {
+            periodButton(direction: .previous, systemImage: "chevron.left",
+                         label: "Show previous week",
+                         disabled: store.isLoading, action: store.showPreviousWeek)
+            dayHeaders
+            periodButton(direction: .next, systemImage: "chevron.right", label: "Show next week",
+                         disabled: store.isLoading || store.isCurrentWindow,
+                         action: store.showNextWeek)
+        }
+    }
+
+    private func periodButton(direction: PeriodDirection, systemImage: String, label: String, disabled: Bool,
+                              action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .frame(width: 20, height: 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(hoveredPeriodButton == direction && !disabled
+                              ? Color.accentColor.opacity(0.14) : Color.clear)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(disabled)
+        .onHover { inside in
+            if inside && !disabled {
+                hoveredPeriodButton = direction
+            } else if hoveredPeriodButton == direction {
+                hoveredPeriodButton = nil
+            }
+        }
+        .onChange(of: disabled) { isDisabled in
+            guard isDisabled, hoveredPeriodButton == direction else { return }
+            hoveredPeriodButton = nil
+        }
+        .help(label)
+        .accessibilityLabel(label)
+    }
+
     private var totalsFooter: some View {
-        Text("Today \(TokenCountFormatter.abbreviated(snapshot.totals.today)) · "
-            + "7d \(TokenCountFormatter.abbreviated(snapshot.totals.last7Days)) · "
-            + "14d \(TokenCountFormatter.abbreviated(snapshot.totals.visibleWindow))")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .monospacedDigit()
-            .lineLimit(1)
+        HStack {
+            Text("\(windowEndLabel) \(TokenCountFormatter.abbreviated(snapshot.totals.windowEndDay)) · "
+                + "7d \(TokenCountFormatter.abbreviated(snapshot.totals.last7Days)) · "
+                + "14d \(TokenCountFormatter.abbreviated(snapshot.totals.visibleWindow))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .lineLimit(1)
+            Spacer()
+            if !store.isCurrentWindow {
+                Button("Today", action: store.showToday)
+                    .font(.caption)
+                    .disabled(store.isLoading)
+            }
+        }
+    }
+
+    private var windowEndLabel: String {
+        guard let end = snapshot.windowDays.last else { return "End day" }
+        if calendar.isDate(end, inSameDayAs: snapshot.now) { return "Today" }
+        return end.formatted(.dateTime.month(.abbreviated).day())
     }
 
     private var dayHeaders: some View {
@@ -149,12 +257,6 @@ struct HeatmapGrid: View {
 
     private var hourLabels: some View {
         VStack(alignment: .trailing, spacing: 2) {
-            // Mirrors dayHeaders' three-line (month + weekday + day-number) header height exactly.
-            VStack(spacing: 0) {
-                Text(" ").font(.system(size: monthFontSize))
-                Text(" ").font(.system(size: weekdayFontSize))
-                Text(" ").font(.system(size: dayFontSize, weight: .medium))
-            }
             ForEach(0..<24, id: \.self) { h in
                 Text(h % 3 == 0 ? "\(h)" : " ")
                     .font(.system(size: hourFontSize))
@@ -214,12 +316,24 @@ struct HeatmapGrid: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
+            } else if snapshot.state == .noRecentData {
+                Text("No usage in \(periodLabel). Older logs may have been removed by Claude Code.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             } else {
                 Text("Hover a cell for details")
                     .font(.caption).foregroundStyle(.tertiary)
             }
         }
         .frame(height: 72, alignment: .topLeading)
+    }
+
+    private var periodLabel: String {
+        guard let start = snapshot.windowDays.first,
+              let end = snapshot.windowDays.last else { return "selected period" }
+        let startText = start.formatted(.dateTime.month(.abbreviated).day())
+        let endText = end.formatted(.dateTime.year().month(.abbreviated).day())
+        return "\(startText) – \(endText)"
     }
 
     private func modelBreakdown(for key: DayHour) -> String? {
@@ -269,7 +383,7 @@ struct HeatmapGrid: View {
             ],
             DayHour(day: today, hour: 11): ["claude-opus-4-1": WideUInt(79_000_000)],
         ]
-        s.totals.today = WideUInt(102_000_000)
+        s.totals.windowEndDay = WideUInt(102_000_000)
         s.totals.last7Days = WideUInt(408_000_000)
         s.totals.visibleWindow = WideUInt(702_000_000)
         s.thresholds3 = [WideUInt(23_000_000), WideUInt(40_000_000), WideUInt(60_000_000)]

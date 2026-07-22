@@ -36,7 +36,9 @@ tokens in Claude Code — as a day×hour heatmap. Read-only, fully local, no net
 
 Tokograph reads Claude Code's local session transcripts
 (`~/.claude/projects/**/*.jsonl`), deduplicates streamed/duplicated entries,
-and renders the last 14 days as a 14-column × 24-row heatmap.
+and renders a pageable 14-day window as a 14-column × 24-row heatmap. The
+arrow controls move the window by seven days through the history that Claude
+Code still retains.
 
 - **Read-only.** Never writes to, or transmits, anything.
 - **Local.** No network access, no analytics, no crash reporting.
