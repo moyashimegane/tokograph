@@ -32,7 +32,7 @@ final class AggregatorTests: XCTestCase {
         XCTAssertEqual(r.futureTimestamps, 0)
         XCTAssertEqual(r.totals.visibleWindow, WideUInt(10))
     }
-    func testTotalsUseNowAnchoredTodayAndSevenDayBoundaries() {
+    func testTotalsUseCurrentWindowEndAndSevenDayBoundaries() {
         // now local = Jul 18 08:00 EDT; 7d begins at Jul 12 00:00 EDT (04:00Z).
         let records = [
             rec("2026-07-18T04:00:00Z", total: 1),
@@ -42,7 +42,7 @@ final class AggregatorTests: XCTestCase {
             rec("2026-07-18T12:00:01Z", total: 16),
         ]
         let r = Aggregator.aggregate(records: records, now: now, calendar: cal)
-        XCTAssertEqual(r.totals.today, WideUInt(1))
+        XCTAssertEqual(r.totals.windowEndDay, WideUInt(1))
         XCTAssertEqual(r.totals.last7Days, WideUInt(7))
         XCTAssertEqual(r.totals.visibleWindow, WideUInt(15))
     }
@@ -53,10 +53,45 @@ final class AggregatorTests: XCTestCase {
         ]
         let r = Aggregator.aggregate(records: records, now: now, calendar: cal)
         let expected = WideUInt(UInt64(Int64.max)) + WideUInt(UInt64(Int64.max))
-        XCTAssertEqual(r.totals.today, expected)
+        XCTAssertEqual(r.totals.windowEndDay, expected)
         XCTAssertEqual(r.totals.last7Days, expected)
         XCTAssertEqual(r.totals.visibleWindow, expected)
         XCTAssertTrue(r.totals.visibleWindow.isAboveInt64Max)
+    }
+    func testHistoricalWindowIncludesEntireEndDayAndIgnoresNewerPastRecords() {
+        let end = LineParser.parseISO8601("2026-07-11T16:00:00Z")! // Jul 11 local
+        let records = [
+            rec("2026-07-11T04:00:00Z", total: 1),  // start of Jul 11 local
+            rec("2026-07-12T03:59:59Z", total: 2),  // final second of Jul 11 local
+            rec("2026-07-12T04:00:00Z", total: 4),  // Jul 12 local: outside, but not future
+            rec("2026-07-18T12:00:01Z", total: 8),  // after actual now: future
+        ]
+        let r = Aggregator.aggregate(records: records, now: now, windowEnd: end, calendar: cal)
+
+        XCTAssertEqual(r.inWindowRecordCount, 2)
+        XCTAssertEqual(r.totalRecordCount, 4)
+        XCTAssertEqual(r.futureTimestamps, 1)
+        XCTAssertEqual(r.totals.windowEndDay, WideUInt(3))
+        XCTAssertEqual(r.totals.last7Days, WideUInt(3))
+        XCTAssertEqual(r.totals.visibleWindow, WideUInt(3))
+    }
+    func testHistoricalTotalsUseSelectedEndDayBoundaries() {
+        let end = LineParser.parseISO8601("2026-07-11T16:00:00Z")! // Jul 11 local
+        let records = [
+            rec("2026-07-11T10:00:00Z", total: 1),
+            rec("2026-07-05T04:00:00Z", total: 2),  // exact 7-day start
+            rec("2026-07-05T03:59:59Z", total: 4),  // visible, before 7-day start
+            rec("2026-06-28T04:00:00Z", total: 8),  // exact 14-day start
+            rec("2026-06-28T03:59:59Z", total: 16), // before visible window
+            rec("2026-07-12T04:00:00Z", total: 32), // after selected end day
+        ]
+        let r = Aggregator.aggregate(records: records, now: now, windowEnd: end, calendar: cal)
+
+        XCTAssertEqual(r.inWindowRecordCount, 4)
+        XCTAssertEqual(r.futureTimestamps, 0)
+        XCTAssertEqual(r.totals.windowEndDay, WideUInt(1))
+        XCTAssertEqual(r.totals.last7Days, WideUInt(3))
+        XCTAssertEqual(r.totals.visibleWindow, WideUInt(15))
     }
     func testPerModelTotalsAreGroupedWithinCellAndNilIsUnknown() {
         let timestamp = "2026-07-18T10:30:00Z"
@@ -83,10 +118,11 @@ final class AggregatorTests: XCTestCase {
     }
     func testDSTFallBackMergesDoubledHour() {
         // 2026-11-01: 01:30 EDT (05:30Z) and 01:30 EST (06:30Z) — same wall-clock hour 1
-        let nowNov = LineParser.parseISO8601("2026-11-02T00:00:00Z")!
+        let nowNov = LineParser.parseISO8601("2026-11-10T12:00:00Z")!
+        let historicalEnd = LineParser.parseISO8601("2026-11-01T18:00:00Z")!
         let r = Aggregator.aggregate(
             records: [rec("2026-11-01T05:30:00Z", total: 1), rec("2026-11-01T06:30:00Z", total: 2)],
-            now: nowNov, calendar: cal)
+            now: nowNov, windowEnd: historicalEnd, calendar: cal)
         XCTAssertEqual(r.cells.count, 1)
         XCTAssertEqual(r.cells.values.first, WideUInt(3))
         XCTAssertEqual(r.cells.keys.first?.hour, 1)

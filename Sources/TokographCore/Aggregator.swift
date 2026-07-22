@@ -7,7 +7,7 @@ public struct DayHour: Hashable, Sendable {
 }
 
 public struct UsageTotals: Sendable, Equatable {
-    public var today = WideUInt(0)
+    public var windowEndDay = WideUInt(0)
     public var last7Days = WideUInt(0)
     public var visibleWindow = WideUInt(0)
     public init() {}
@@ -24,25 +24,30 @@ public struct AggregationResult: Sendable, Equatable {
 }
 
 public enum Aggregator {
-    public static func aggregate(records: [UsageRecord], now: Date,
+    public static func aggregate(records: [UsageRecord], now: Date, windowEnd: Date? = nil,
                                  calendar: Calendar, windowDays: Int = 14) -> AggregationResult {
         var result = AggregationResult()
         result.totalRecordCount = records.count
+        guard windowDays > 0 else { return result }
         let todayStart = calendar.startOfDay(for: now)
-        guard let last7DaysStart = calendar.date(byAdding: .day, value: -6, to: todayStart),
-              let windowStart = calendar.date(byAdding: .day, value: -(windowDays - 1), to: todayStart) else {
+        let requestedEnd = calendar.startOfDay(for: windowEnd ?? now)
+        let windowEndStart = min(requestedEnd, todayStart)
+        guard let windowEndExclusive = calendar.date(byAdding: .day, value: 1, to: windowEndStart),
+              let last7DaysStart = calendar.date(byAdding: .day, value: -6, to: windowEndStart),
+              let windowStart = calendar.date(byAdding: .day, value: -(windowDays - 1),
+                                              to: windowEndStart) else {
             return result
         }
         for r in records {
             if r.timestamp > now { result.futureTimestamps += 1; continue }
+            guard r.timestamp >= windowStart, r.timestamp < windowEndExclusive else { continue }
             let total = r.tokens.wideTotal
             if r.timestamp >= last7DaysStart {
                 result.totals.last7Days = result.totals.last7Days + total
-                if r.timestamp >= todayStart {
-                    result.totals.today = result.totals.today + total
+                if r.timestamp >= windowEndStart {
+                    result.totals.windowEndDay = result.totals.windowEndDay + total
                 }
             }
-            guard r.timestamp >= windowStart else { continue }
             let key = DayHour(day: calendar.startOfDay(for: r.timestamp),
                               hour: calendar.component(.hour, from: r.timestamp))
             result.cells[key, default: WideUInt(0)] = result.cells[key, default: WideUInt(0)] + total

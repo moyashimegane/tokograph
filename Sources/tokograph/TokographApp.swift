@@ -7,11 +7,39 @@ final class UsageStore: ObservableObject {
     @Published private(set) var snapshot = DisplaySnapshot.initial
     @Published private(set) var isLoading = false
     @Published private(set) var lastRefreshFailed = false
+    @Published private(set) var selectedWindowEnd: Date?
     private var running = false
     private var dirty = false
 
-    init(snapshot: DisplaySnapshot = .initial) {
+    init(snapshot: DisplaySnapshot = .initial, selectedWindowEnd: Date? = nil) {
         self.snapshot = snapshot
+        self.selectedWindowEnd = selectedWindowEnd
+    }
+
+    var isCurrentWindow: Bool { selectedWindowEnd == nil }
+
+    func showPreviousWeek() {
+        guard !isLoading else { return }
+        let calendar = Calendar.current
+        let currentEnd = selectedWindowEnd ?? calendar.startOfDay(for: Date())
+        guard let previousEnd = calendar.date(byAdding: .day, value: -7, to: currentEnd) else { return }
+        selectedWindowEnd = previousEnd
+        refresh()
+    }
+
+    func showNextWeek() {
+        guard !isLoading, let currentEnd = selectedWindowEnd else { return }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let nextEnd = calendar.date(byAdding: .day, value: 7, to: currentEnd) else { return }
+        selectedWindowEnd = nextEnd >= today ? nil : nextEnd
+        refresh()
+    }
+
+    func showToday() {
+        guard !isLoading, selectedWindowEnd != nil else { return }
+        selectedWindowEnd = nil
+        refresh()
     }
 
     func refresh() {
@@ -20,6 +48,9 @@ final class UsageStore: ObservableObject {
         let defaultsValue = UserDefaults.standard.string(forKey: "configRoot")
         let env = ProcessInfo.processInfo.environment
         let home = FileManager.default.homeDirectoryForCurrentUser
+        let now = Date()
+        let calendar = Calendar.current
+        let requestedWindowEnd = selectedWindowEnd
         // Cross-root rule: resolve synchronously and clear held data *before* detaching if the
         // resolved root differs from what's currently shown — the old root's data must never
         // remain visible while a different root's refresh is in flight.
@@ -35,8 +66,8 @@ final class UsageStore: ObservableObject {
         }
         Task.detached(priority: .userInitiated) { [weak self] in
             let snap = RefreshEngine.runRefresh(defaultsValue: defaultsValue, env: env, home: home,
-                                                source: ClaudeCodeSource(), now: Date(),
-                                                calendar: Calendar.current)
+                                                source: ClaudeCodeSource(), now: now,
+                                                windowEnd: requestedWindowEnd, calendar: calendar)
             guard !Task.isCancelled else { return } // cancelled refresh publishes nothing
             await MainActor.run { [weak self] in
                 guard let self else { return }
@@ -44,6 +75,7 @@ final class UsageStore: ObservableObject {
                 // Same-root failure: keep the last successful data on screen and surface a
                 // footer note instead of blanking a working grid over a transient error.
                 if snap.state == .error, snap.rootPath == self.snapshot.rootPath,
+                   snap.windowDays == self.snapshot.windowDays,
                    self.snapshot.state == .ok {
                     self.lastRefreshFailed = true
                 } else {
