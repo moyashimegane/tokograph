@@ -15,6 +15,7 @@ public struct UsageTotals: Sendable, Equatable {
 
 public struct AggregationResult: Sendable, Equatable {
     public var cells: [DayHour: WideUInt] = [:]
+    public var dailyTotals: [Date: WideUInt] = [:]
     public var perModel: [DayHour: [String: WideUInt]] = [:]
     public var totals = UsageTotals()
     public var futureTimestamps = 0
@@ -48,9 +49,12 @@ public enum Aggregator {
                     result.totals.windowEndDay = result.totals.windowEndDay + total
                 }
             }
-            let key = DayHour(day: calendar.startOfDay(for: r.timestamp),
+            let day = calendar.startOfDay(for: r.timestamp)
+            let key = DayHour(day: day,
                               hour: calendar.component(.hour, from: r.timestamp))
             result.cells[key, default: WideUInt(0)] = result.cells[key, default: WideUInt(0)] + total
+            result.dailyTotals[day, default: WideUInt(0)] =
+                result.dailyTotals[day, default: WideUInt(0)] + total
             let model = r.model ?? "unknown"
             result.perModel[key, default: [:]][model, default: WideUInt(0)] =
                 result.perModel[key, default: [:]][model, default: WideUInt(0)] + total

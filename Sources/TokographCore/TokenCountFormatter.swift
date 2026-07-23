@@ -1,4 +1,27 @@
 public enum TokenCountFormatter {
+    public static func exact(_ value: WideUInt) -> String {
+        var remaining = value
+        var digits: [Character] = []
+        repeat {
+            let quotientHigh = remaining.high / 10
+            let remainderHigh = remaining.high % 10
+            let division = UInt64(10).dividingFullWidth(
+                (high: remainderHigh, low: remaining.low))
+            digits.append(Character(String(division.remainder)))
+            remaining = WideUInt(high: quotientHigh, low: division.quotient)
+        } while remaining > WideUInt(0)
+
+        let raw = String(digits.reversed())
+        var grouped = ""
+        for (index, character) in raw.enumerated() {
+            if index > 0, (raw.count - index).isMultiple(of: 3) {
+                grouped.append(",")
+            }
+            grouped.append(character)
+        }
+        return grouped
+    }
+
     public static func abbreviated(_ value: WideUInt) -> String {
         let saturated = UInt64(value.saturatedInt64)
         guard saturated >= 1_000 else { return String(saturated) }

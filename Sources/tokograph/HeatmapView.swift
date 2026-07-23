@@ -120,8 +120,10 @@ struct HeatmapGrid: View {
     @EnvironmentObject var store: UsageStore
     let snapshot: DisplaySnapshot
     @State private var hovered: DayHour?
+    @State private var hoveredDay: Date?
     @State private var hoveredPeriodButton: PeriodDirection?
     private let cellW: CGFloat = 30, cellH: CGFloat = 15
+    private let dailyBarHeight: CGFloat = 38
     private let monthFontSize: CGFloat = 11
     private let weekdayFontSize: CGFloat = 11
     private let dayFontSize: CGFloat = 12
@@ -141,6 +143,7 @@ struct HeatmapGrid: View {
                     hourLabels
                     grid
                 }
+                dailyBarChart
             }
             hoverDetail
             totalsFooter
@@ -279,6 +282,50 @@ struct HeatmapGrid: View {
         }
     }
 
+    private var dailyBarChart: some View {
+        HStack(alignment: .bottom, spacing: 4) {
+            Color.clear
+                .frame(width: 20, height: dailyBarHeight)
+                .accessibilityHidden(true)
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(snapshot.windowDays, id: \.self) { day in
+                    dailyBar(day: day)
+                }
+            }
+        }
+    }
+
+    private func dailyBar(day: Date) -> some View {
+        let value = snapshot.dailyTotals[day] ?? WideUInt(0)
+        let height = dailyBarHeight * CGFloat(
+            value.scaled(to: 10_000, relativeTo: maximumDailyTotal)) / 10_000
+        return ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(hoveredDay == day ? Color.accentColor.opacity(0.10) : Color.clear)
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.teal.opacity(0.82))
+                .frame(height: height)
+        }
+        .frame(width: cellW, height: dailyBarHeight)
+        .contentShape(Rectangle())
+        .onHover { inside in
+            if inside {
+                hoveredDay = day
+                hovered = nil
+            } else if hoveredDay == day {
+                hoveredDay = nil
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(dailyTooltip(day: day, value: value))
+    }
+
+    private var maximumDailyTotal: WideUInt {
+        snapshot.windowDays
+            .map { snapshot.dailyTotals[$0] ?? WideUInt(0) }
+            .max() ?? WideUInt(0)
+    }
+
     private func cell(day: Date, hour: Int) -> some View {
         let key = DayHour(day: day, hour: hour)
         let value = snapshot.cells[key] ?? WideUInt(0)
@@ -291,7 +338,12 @@ struct HeatmapGrid: View {
                     .stroke(Color.accentColor, lineWidth: hovered == key ? 1 : 0)
             )
             .onHover { inside in
-                if inside { hovered = key } else if hovered == key { hovered = nil }
+                if inside {
+                    hovered = key
+                    hoveredDay = nil
+                } else if hovered == key {
+                    hovered = nil
+                }
             }
             .accessibilityLabel(tooltip(day: day, hour: hour, value: value))
     }
@@ -300,7 +352,12 @@ struct HeatmapGrid: View {
     /// (AppKit `.help` tooltips do not fire inside MenuBarExtra's non-activating panel.)
     var hoverDetail: some View {
         VStack(alignment: .leading, spacing: 1) {
-            if let key = hovered {
+            if let day = hoveredDay {
+                let value = snapshot.dailyTotals[day] ?? WideUInt(0)
+                Text(dailyTooltip(day: day, value: value))
+                    .font(.caption)
+                    .monospacedDigit()
+            } else if let key = hovered {
                 let value = snapshot.cells[key] ?? WideUInt(0)
                 Text(tooltip(day: key.day, hour: key.hour, value: value))
                     .font(.caption).monospacedDigit()
@@ -321,7 +378,7 @@ struct HeatmapGrid: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Hover a cell for details")
+                Text("Hover a cell or daily bar for details")
                     .font(.caption).foregroundStyle(.tertiary)
             }
         }
@@ -347,9 +404,12 @@ struct HeatmapGrid: View {
 
     private func tooltip(day: Date, hour: Int, value: WideUInt) -> String {
         let d = day.formatted(.dateTime.month(.abbreviated).day())
-        let n = value.saturatedInt64.formatted(.number)
-        let prefix = value.isAboveInt64Max ? "at least " : ""
-        return "\(d), \(hour):00, \(prefix)\(n) tokens"
+        return "\(d), \(hour):00, \(TokenCountFormatter.exact(value)) tokens"
+    }
+
+    private func dailyTooltip(day: Date, value: WideUInt) -> String {
+        let d = day.formatted(.dateTime.year().month(.abbreviated).day())
+        return "\(d), \(TokenCountFormatter.exact(value)) tokens"
     }
 
     private func color(bucket: Int) -> Color {
@@ -376,6 +436,11 @@ struct HeatmapGrid: View {
         s.state = .ok
         s.cells = [DayHour(day: today, hour: 9): WideUInt(23_000_000),
                    DayHour(day: today, hour: 11): WideUInt(79_000_000)]
+        s.dailyTotals = [
+            cal.date(byAdding: .day, value: -2, to: today)!: WideUInt(34_000_000),
+            cal.date(byAdding: .day, value: -1, to: today)!: WideUInt(58_000_000),
+            today: WideUInt(102_000_000),
+        ]
         s.perModel = [
             DayHour(day: today, hour: 9): [
                 "claude-sonnet-5": WideUInt(18_000_000),
