@@ -101,6 +101,7 @@ final class RefreshEngineTests: XCTestCase {
         XCTAssertEqual(snap.state, .ok)
         XCTAssertEqual(snap.windowDays.count, 14)
         XCTAssertEqual(snap.cells.values.first, WideUInt(42))
+        XCTAssertEqual(snap.dailyTotals.values.first, WideUInt(42))
         XCTAssertEqual(snap.perModel.values.first, ["m": WideUInt(42)])
         XCTAssertEqual(snap.totals.windowEndDay, WideUInt(42))
         XCTAssertEqual(snap.totals.last7Days, WideUInt(42))
@@ -136,6 +137,7 @@ final class RefreshEngineTests: XCTestCase {
         XCTAssertEqual(calendar.component(.month, from: snap.windowDays.first!), 6)
         XCTAssertEqual(calendar.component(.day, from: snap.windowDays.last!), 11)
         XCTAssertEqual(snap.cells.values.first, WideUInt(2))
+        XCTAssertEqual(snap.dailyTotals.values.first, WideUInt(2))
         XCTAssertEqual(snap.totals.windowEndDay, WideUInt(2))
         XCTAssertEqual(snap.diagnostics.futureTimestamps, 1)
     }

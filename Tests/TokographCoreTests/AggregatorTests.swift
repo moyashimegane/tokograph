@@ -21,6 +21,7 @@ final class AggregatorTests: XCTestCase {
         let key = r.cells.keys.first!
         XCTAssertEqual(cal.component(.day, from: key.day), 17)
         XCTAssertEqual(key.hour, 23)
+        XCTAssertEqual(r.dailyTotals[key.day], WideUInt(10))
     }
     func testWindowStartInclusionAndExclusion() {
         // now local = Jul 18 08:00 EDT → window start = startOfDay(Jul 5 local) = Jul 5 04:00Z (EDT=-4)
@@ -57,6 +58,7 @@ final class AggregatorTests: XCTestCase {
         XCTAssertEqual(r.totals.last7Days, expected)
         XCTAssertEqual(r.totals.visibleWindow, expected)
         XCTAssertTrue(r.totals.visibleWindow.isAboveInt64Max)
+        XCTAssertEqual(r.dailyTotals.values.first, expected)
     }
     func testHistoricalWindowIncludesEntireEndDayAndIgnoresNewerPastRecords() {
         let end = LineParser.parseISO8601("2026-07-11T16:00:00Z")! // Jul 11 local
@@ -114,7 +116,32 @@ final class AggregatorTests: XCTestCase {
     }
     func testFutureTimestampCountedAndDropped() {
         let r = Aggregator.aggregate(records: [rec("2026-07-18T12:00:01Z")], now: now, calendar: cal)
-        XCTAssertEqual(r.futureTimestamps, 1); XCTAssertTrue(r.cells.isEmpty)
+        XCTAssertEqual(r.futureTimestamps, 1)
+        XCTAssertTrue(r.cells.isEmpty)
+        XCTAssertTrue(r.dailyTotals.isEmpty)
+    }
+    func testDailyTotalEqualsSumOfAllHourCellsAndOmitsUnusedDays() {
+        let allComponents = UsageRecord(
+            timestamp: LineParser.parseISO8601("2026-07-17T11:30:00Z")!,
+            tokens: TokenCounts(input: 1, output: 2, cacheCreation: 4, cacheRead: 8),
+            model: "m", project: "p", sessionId: nil, messageId: "components", requestId: nil)
+        let records = [
+            rec("2026-07-17T04:30:00Z", total: 2),
+            rec("2026-07-17T10:30:00Z", total: 4),
+            rec("2026-07-18T03:59:59Z", total: 8),
+            allComponents,
+        ]
+        let r = Aggregator.aggregate(records: records, now: now, calendar: cal)
+        let day = cal.startOfDay(for: records[0].timestamp)
+        let cellTotal = r.cells
+            .filter { $0.key.day == day }
+            .values
+            .reduce(WideUInt(0), +)
+
+        XCTAssertEqual(r.dailyTotals[day], WideUInt(29))
+        XCTAssertEqual(r.dailyTotals[day], cellTotal)
+        let unusedDay = cal.date(byAdding: .day, value: -1, to: day)!
+        XCTAssertNil(r.dailyTotals[unusedDay])
     }
     func testDSTFallBackMergesDoubledHour() {
         // 2026-11-01: 01:30 EDT (05:30Z) and 01:30 EST (06:30Z) — same wall-clock hour 1

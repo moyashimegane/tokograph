@@ -25,4 +25,12 @@ final class TokenCountFormatterTests: XCTestCase {
             TokenCountFormatter.abbreviated(aboveInt64),
             TokenCountFormatter.abbreviated(WideUInt(UInt64(Int64.max))))
     }
+
+    func testExactFormattingPreservesWideValues() {
+        XCTAssertEqual(TokenCountFormatter.exact(WideUInt(0)), "0")
+        XCTAssertEqual(TokenCountFormatter.exact(WideUInt(1_234_567)), "1,234,567")
+        XCTAssertEqual(
+            TokenCountFormatter.exact(WideUInt(high: 1, low: 0)),
+            "18,446,744,073,709,551,616")
+    }
 }

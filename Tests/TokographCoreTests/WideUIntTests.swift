@@ -23,4 +23,16 @@ final class WideUIntTests: XCTestCase {
         XCTAssertEqual(x, WideUInt(high: 1, low: 0))
         XCTAssertTrue(x > WideUInt(UInt64.max))
     }
+    func testScaledRatioUsesWideIntegerProducts() {
+        let half = WideUInt(high: 1, low: 0)
+        let maximum = WideUInt(high: 2, low: 0)
+        XCTAssertEqual(half.scaled(to: 10_000, relativeTo: maximum), 5_000)
+        XCTAssertEqual(maximum.scaled(to: 10_000, relativeTo: maximum), 10_000)
+        XCTAssertEqual(WideUInt(0).scaled(to: 10_000, relativeTo: maximum), 0)
+        XCTAssertEqual(half.scaled(to: 10_000, relativeTo: WideUInt(0)), 0)
+    }
+    func testScaledRatioRoundsDownDeterministically() {
+        XCTAssertEqual(WideUInt(1).scaled(to: 10, relativeTo: WideUInt(3)), 3)
+        XCTAssertEqual(WideUInt(2).scaled(to: 10, relativeTo: WideUInt(3)), 6)
+    }
 }
