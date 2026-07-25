@@ -21,15 +21,15 @@ A macOS menu-bar app that shows which day, at which hour, you spent how many
 tokens in Claude Code — as a day×hour heatmap. Read-only, fully local, no network.
 
 <p align="center">
-  <img src="docs/images/popover-light.png" width="480" alt="Tokograph heatmap popover showing token usage by day and hour">
+  <img src="docs/images/popover-light.png" width="480" alt="Tokograph popover showing a pageable 14-day hourly heatmap and daily token bars">
   <br>
-  <sub>14-day token usage overview</sub>
+  <sub>Pageable 14-day overview with hourly heatmap cells and daily token totals.</sub>
 </p>
 
 <p align="center">
-  <img src="docs/images/popover-hover-light.png" width="480" alt="Tokograph heatmap popover showing token and model details for a hovered cell">
+  <img src="docs/images/popover-hover-light.png" width="480" alt="Tokograph popover showing token details for a hovered daily bar">
   <br>
-  <sub>Hover a cell to see the date, hour, token count, and per-model usage.</sub>
+  <sub>Hover an hourly cell or daily bar to see its token details; hourly cells also show per-model usage.</sub>
 </p>
 
 ## How it works
