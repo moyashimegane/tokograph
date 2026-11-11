@@ -1,0 +1,16 @@
+language: "ja-JP"
+reviews:
+  profile: "chill"
+  auto_review:
+    enabled: true
+    drafts: false
+  tools:
+    swiftlint:
+      enabled: true
+  path_instructions:
+    - path: "Sources/**/*.swift"
+      instructions: "Claude CodeのJSONLログ解析が対象。重複排除、日付と時間のバケット処理、壊れた行を落とさず件数として数える処理、ネットワーク送信やファイル書き込みが発生していないかを重点的に見ること"
+    - path: "Tests/**/*.swift"
+      instructions: "境界条件と異常系のカバレッジ不足を指摘すること"
+chat:
+  auto_reply: true
